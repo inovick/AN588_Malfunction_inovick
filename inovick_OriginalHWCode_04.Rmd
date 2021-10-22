@@ -27,7 +27,7 @@ alternative <- (default “two.sided”)
 conf.level <- (default 0.95)
 ```
 
-
+## So I think I use the basic format of the prop.test function, but I am struggling to figure out how to fit the parameters into this. Would I use a "for" statement, or an "if/then" situation? Also, would I need to create that exemplar population to draw from? Would I include the parameters for the one tail with phat?
 ```{r}
 #create a population of 500 “1”s and 500 “0”s, i.e., where π = 0.5
 
@@ -44,7 +44,10 @@ binom.test(x, n, p = 0.5, alternative = "two.sided")
 prop.test(x, n, p = NULL, alternative = "two.sided",
           correct = F)
 
+```
 
+## I think I would need to include these somehow to print the final results once the function is run? I am not sure how to integrate them.
+```{r}
 # printing the p-value
 res$p.value
 
