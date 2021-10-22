@@ -134,6 +134,8 @@ lm_eqn <- function(df){
 
 p1 <- g + geom_text(x = 200, y = 400, label = lm_eqn(df), parse = TRUE)
 p1
+
+#Adding a legend to differentiate between the lines for the 90 percent confidence and prediction interval bands... I am not sure how to do this, or what the prediction interval bands are. I still need to produce a point estimate and associated 90 percent PI for the longevity of a species whose brain weight is 800 gm
 ```
 ##Now using the log transformed data:
 ```{r}
