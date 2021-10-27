@@ -1,0 +1,184 @@
+---
+title: "inovick_PeerCommentary_nirmitin_04"
+author: "Nirmiti Naik"
+date: "10/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Challenge 1
+## Write a simple R function that can perform one- or two-sample Z-tests for proportion data
+# I just "assigned" values to these variables to remind myself of what the guidelines for each variable are supposed to be, that's why I'm getting errors, because I didn't actually write a value
+```{r}
+#Defining variables
+#p1 <-[estimated proportion from sample size]
+#p2 <-NULL
+#p0 <-expected value of population proportion
+#n1 <-[samplen]
+#n2 <-NULL
+#alternative <- (default “two.sided”)
+#conf.level <- (default 0.95)
+```
+
+## So I think I use the basic format of the prop.test function, but I am struggling to figure out how to fit the parameters into this. Would I use a "for" statement, or an "if/then" situation? Also, would I need to create that exemplar population to draw from? Would I include the parameters for the one tail with phat?
+**I'm not following why this population was created, but I think you need to incorporate the variables you defined above into the basic format of the prop.test function you have below to code Z.prop.test() -NN**
+```{r}
+#create a population of 500 “1”s and 500 “0”s, i.e., where π = 0.5
+pop <- c(rep(0, 500), rep(1, 500))
+#prop.test function
+prop.test(x, n, p = NULL,
+          alternative = c("two.sided", "less", "greater"),
+          conf.level = 0.95, correct = F)
+#From http://www.sthda.com/english/wiki/two-proportions-z-test-in-r
+#running a one proportion z-test  
+binom.test(x, n, p = 0.5, alternative = "two.sided")
+prop.test(x, n, p = NULL, alternative = "two.sided",
+          correct = F)
+```
+
+## I think I would need to include these somehow to print the final results once the function is run? I am not sure how to integrate them.
+**I think the definitions of these variables/words would be more clear if they were actual text outside of the r code blocks as opposed to inside the code themselves since I first thought they were notes to yourself or explanation for the code below.-NN**
+```{r}
+# printing the p-value
+res$p.value
+# printing the confidence interval
+res$conf.int
+#components of prop.test function:
+#statistic: the number of successes
+#parameter: the number of trials
+#p.value: the p-value of the test
+#conf.int: a confidence interval for the probability of success.
+#estimate: the estimated probability of success.
+#Adjust this for parameters
+Z.prop.test()
+z.test = function(x,mu,popvar){
+one.tail.p <- NULL
+z.score <- round((mean(x)-mu)/(popvar/sqrt(length(x))),3)
+one.tail.p <- round(pnorm(abs(z.score),lower.tail = FALSE),3)
+cat(" z =",z.score,"\n",
+"one-tailed probability =", one.tail.p,"\n",
+"two-tailed probability =", 2*one.tail.p )}
+```
+
+### Challenge 2
+## The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size)
+## Install packages, load packages:
+```{r}
+#Load necessary packages
+library(curl)
+library(ggplot2)
+library(manipulate)
+install.packages("gridExtra")
+library(gridExtra)
+install.packages("lmodel2")
+library(lmodel2)
+```
+
+#Load data, fitting a regression model to predict longevity
+```{r}
+#Load the data using curl command
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/KamilarAndCooperData.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+#Estimating the slope by hand-- this is not working lol
+**I'm not really understanding why you subtracted mean(d$columnname) - I tried removing that bit from the y and x assignments and a plot was created. I think I'm just not familiar with estimating the slope with this equation. -NN**
+```{r}
+#First plot the data
+plot(data = d, Brain_Size_Species_Mean ~ MaxLongevity_m)
+#Estimate the slope-- Tried this, it just gave me a gray box? Why?
+y <- d$Brain_Size_Species_Mean - mean(d$Brain_Size_Species_Mean)
+x <- d$MaxLongevity_m - mean(d$MaxLongevity_m)
+z <- data.frame(cbind(x, y))
+g <- ggplot(data = z, aes(x = x, y = y)) + geom_point()
+g
+```
+
+#Using lm function
+**I followed a similar process by going off the code in one of the modules too. -NN**
+```{r}
+#I will try the lm function now here
+m <- lm(MaxLongevity_m ~ Brain_Size_Species_Mean, data = d)
+m
+names(m)
+m$coefficients
+```
+
+**I think since we're predicting longevity from brain size that means that longevity is x and brain size is y; so, when x is 0 then y is 248.952g but I'm with you - I'm not sure how that makes sense? -NN**
+```{r}
+#Intercept is 248.952. This means that when the y=0, brain size would be 248.952 g. Right? Did I get this backwards?
+#Now fitting the line to the plot
+g <- ggplot(data = d, aes(x = MaxLongevity_m, y = Brain_Size_Species_Mean))
+g <- g + geom_point()
+g <- g + geom_smooth(method = "lm", formula = y ~ x)
+g
+```
+
+```{r}
+#Made the variables into a dataframe
+df <- data.frame(x = d$MaxLongevity_m, y = d$Brain_Size_Species_Mean)
+```
+
+```{r}
+#Found this on stack exchange to try and put a legend displaying the equation on the graph
+lm_eqn <- function(df){
+    m <- lm(y ~ x, df);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+p1 <- g + geom_text(x = 200, y = 400, label = lm_eqn(df), parse = TRUE)
+p1
+#Adding a legend to differentiate between the lines for the 90 percent confidence and prediction interval bands... I am not sure how to do this, or what the prediction interval bands are. I still need to produce a point estimate and associated 90 percent PI for the longevity of a species whose brain weight is 800 gm
+```
+##Now using the log transformed data:
+```{r}
+brain.size <- log(d$Brain_Size_Species_Mean)
+longevity <- log(d$MaxLongevity_m)
+g <- ggplot(data = d, aes(x = brain.size, y = longevity))
+g <- g + geom_point()
+g <- g + geom_smooth(method = "lm", formula = y ~ x)
+g
+#Log transformed data is a better graph because it cuts out extra and fits it nicely
+```
+## Figuring out the best slope-- identifying the point estimate of the slope
+```{r}
+slope.test <- function(beta1) {
+    g <- ggplot(data = d, aes(x = d$Brain_Size_Species_Mean, y = MaxLongevity_m))
+    g <- g + geom_point()
+    g <- g + geom_abline(intercept = 0, slope = beta1, size = 1, colour = "blue",
+        alpha = 1/2)
+    ols <- sum((y - beta1 * x)^2)
+    g <- g + ggtitle(paste("Slope = ", beta1, "\nSum of Squared Deviations = ",
+        round(ols, 3)))
+    g
+}
+#Using manipulate. It just gives me a gray square again. Why??
+manipulate(slope.test(beta1), beta1 = slider(-1, 1, initial = 0, step = 0.005))
+```
+#Confidence interval
+```{r}
+ci <- confint(m, level = 0.90) # using the results of lm()
+ci
+```
+```
+
+## Peer Commentary - NN
++ What you learned from running their Original Homework Code that helped improve your own code.
+My biggest takeaway from your code is the value in consulting external resources like StackExchange since you were able to figure out how to do things (e.g. adding legends) that I didn't even know how to approach. I also appreciate the "stream of consciousness" that's throughout your code since it makes it clear to the viewer why you chose to do certain things. 
+
++ What you did in your own code that might help to improve theirs.
+Our codes are pretty similar but I'd say the only difference is our methods of commenting. I personally find it easier to follow if the comments are separate from the code so when the file is knitted they aren't intermingled with the code - however, if this isn't your preference I think your code looks good! 
+
++ What challenges, if any, you both faced in your code that could not be helped by comparison.
+I think we're both confused with the second half of challenge 2 and that can only be helped by consulting the modules and other online resources. 
+
++ Whether the annotation/commenting on your peer’s Original Homework Code is readable and interpretable to you, and if not then how it could be improved.
+For the most part I was able to follow the annotations and comments in your code, I like how you included code that wasn't necessarily successful too since that shows the breadth of your attempts and the different methods that you considered for answering the various questions. 
+
+Overall, good job! This has been the hardest assignment for me and I think your code looks great. 
