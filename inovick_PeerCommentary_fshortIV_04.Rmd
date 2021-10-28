@@ -1,0 +1,183 @@
+---
+title: "inovick_OriginalHomeworkCode_04."
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Challenge 1
+## Write a simple R function that can perform one- or two-sample Z-tests for proportion data
+# I just "assigned" values to these variables to remind myself of what the guidelines for each variable are supposed to be, that's why I'm getting errors, because I didn't actually write a value
+```{r}
+#Defining variables
+p1 <-[estimated proportion from sample size]
+p2 <-NULL
+p0 <-expected value of population proportion
+
+n1 <-[samplen]
+n2 <-NULL
+
+alternative <- (default “two.sided”)
+conf.level <- (default 0.95)
+```
+**Setting up with some notes to yourself to figure out what you need to be doing is a great idea. I wonder, though, if you don't want errors to result it may be a good idea to include these as "comments" with a "#" beforehand so that R doesn't attempt to run them**
+
+## So I think I use the basic format of the prop.test function, but I am struggling to figure out how to fit the parameters into this. Would I use a "for" statement, or an "if/then" situation? Also, would I need to create that exemplar population to draw from? Would I include the parameters for the one tail with phat?
+
+```{r}
+#create a population of 500 “1”s and 500 “0”s, i.e., where π = 0.5
+
+pop <- c(rep(0, 500), rep(1, 500))
+
+#prop.test function
+prop.test(x, n, p = NULL,
+          alternative = c("two.sided", "less", "greater"),
+          conf.level = 0.95, correct = F)
+
+#From http://www.sthda.com/english/wiki/two-proportions-z-test-in-r
+#running a one proportion z-test  
+binom.test(x, n, p = 0.5, alternative = "two.sided")
+prop.test(x, n, p = NULL, alternative = "two.sided",
+          correct = F)
+
+```
+**So for the prop.test you have to set what "x" and "n" are for the function to work. Module 10 under "Comparing Sample Proportions" offers a good overview of the formulas to use and how these functions work.**
+
+## I think I would need to include these somehow to print the final results once the function is run? I am not sure how to integrate them.
+```{r}
+# printing the p-value
+res$p.value
+
+# printing the confidence interval
+res$conf.int
+
+#components of prop.test function:
+#statistic: the number of successes
+#parameter: the number of trials
+#p.value: the p-value of the test
+#conf.int: a confidence interval for the probability of success.
+#estimate: the estimated probability of success.
+
+
+#Adjust this for parameters
+Z.prop.test()
+z.test = function(x,mu,popvar){
+one.tail.p <- NULL
+z.score <- round((mean(x)-mu)/(popvar/sqrt(length(x))),3)
+one.tail.p <- round(pnorm(abs(z.score),lower.tail = FALSE),3)
+cat(" z =",z.score,"\n",
+"one-tailed probability =", one.tail.p,"\n",
+"two-tailed probability =", 2*one.tail.p )}
+```
+**As far as printing out the results, I think a good way of doing this is using the "print()" function. This is best done at the end of the function. As far as incorporating these values, you need to set up a function with each variable "p1, n1, p2 = NULL, n2 = NULL, p0, etc". That way when you run the function, you just set what values you want to be used in the beginning.**
+
+### Challenge 2
+## The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size)
+## Install packages, load packages:
+```{r}
+#Load necessary packages
+library(curl)
+library(ggplot2)
+library(manipulate)
+install.packages("gridExtra")
+library(gridExtra)
+install.packages("lmodel2")
+library(lmodel2)
+```
+
+#Load data, fitting a regression model to predict longevity
+```{r}
+#Load the data using curl command
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/KamilarAndCooperData.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+#Estimating the slope by hand-- this is not working lol
+```{r}
+#First plot the data
+plot(data = d, Brain_Size_Species_Mean ~ MaxLongevity_m)
+
+#Estimate the slope-- Tried this, it just gave me a gray box? Why?
+y <- d$Brain_Size_Species_Mean - mean(d$Brain_Size_Species_Mean)
+x <- d$MaxLongevity_m - mean(d$MaxLongevity_m)
+z <- data.frame(cbind(x, y))
+g <- ggplot(data = z, aes(x = x, y = y)) + geom_point()
+g
+```
+**So I think first you want to create the model using lm, and then you can use ggplot to plot the lm. This is described pretty well in Module 12 under the lm() function section.**
+#Using lm function
+```{r}
+#I will try the lm function now here
+m <- lm(MaxLongevity_m ~ Brain_Size_Species_Mean, data = d)
+m
+
+names(m)
+m$coefficients
+#Intercept is 248.952. This means that when the y=0, brain size would be 248.952 g. Right? Did I get this backwards?
+
+#Now fitting the line to the plot
+g <- ggplot(data = d, aes(x = MaxLongevity_m, y = Brain_Size_Species_Mean))
+g <- g + geom_point()
+g <- g + geom_smooth(method = "lm", formula = y ~ x)
+g
+
+#Made the variables into a dataframe
+df <- data.frame(x = d$MaxLongevity_m, y = d$Brain_Size_Species_Mean)
+
+#Found this on stack exchange to try and put a legend displaying the equation on the graph
+lm_eqn <- function(df){
+    m <- lm(y ~ x, df);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+
+p1 <- g + geom_text(x = 200, y = 400, label = lm_eqn(df), parse = TRUE)
+p1
+
+#Adding a legend to differentiate between the lines for the 90 percent confidence and prediction interval bands... I am not sure how to do this, or what the prediction interval bands are. I still need to produce a point estimate and associated 90 percent PI for the longevity of a species whose brain weight is 800 gm
+```
+**Wow, that's a cool solution for printing the formula on the chart! For the 90% confidence interval, I also had issues plotting that, but I believe you need to use the predict() function somehow as is done in the module**
+##Now using the log transformed data:
+```{r}
+brain.size <- log(d$Brain_Size_Species_Mean)
+longevity <- log(d$MaxLongevity_m)
+
+g <- ggplot(data = d, aes(x = brain.size, y = longevity))
+g <- g + geom_point()
+g <- g + geom_smooth(method = "lm", formula = y ~ x)
+g
+
+#Log transformed data is a better graph because it cuts out extra and fits it nicely
+```
+**I think logging brain size and longevity before plotting is an interesting solution! For later on, however, I'm pretty sure you do need to use the lm() with the logged version in order to get the graphs and information for each.**
+## Figuring out the best slope-- identifying the point estimate of the slope
+```{r}
+slope.test <- function(beta1) {
+    g <- ggplot(data = d, aes(x = d$Brain_Size_Species_Mean, y = MaxLongevity_m))
+    g <- g + geom_point()
+    g <- g + geom_abline(intercept = 0, slope = beta1, size = 1, colour = "blue",
+        alpha = 1/2)
+    ols <- sum((y - beta1 * x)^2)
+    g <- g + ggtitle(paste("Slope = ", beta1, "\nSum of Squared Deviations = ",
+        round(ols, 3)))
+    g
+}
+
+#Using manipulate. It just gives me a gray square again. Why??
+manipulate(slope.test(beta1), beta1 = slider(-1, 1, initial = 0, step = 0.005))
+```
+**I think Chris talked about how manipulate can only be run in the console? When I run this I do get a graph however**
+#Confidence interval
+```{r}
+ci <- confint(m, level = 0.90) # using the results of lm()
+ci
+```
+```
+**Looks good!**
+**I think overall your code is very well annotated. I can see your thought process for each step, and that is definitely helpful in terms of understanding what approaches you are taking. As far as getting the function to work in the first part, I think you need to incorporate everything you were doing into the main function, and make sure to set up each variable using the syntax. I also was impressed by the different solutions you used to tackle each of these problems!** 
+
