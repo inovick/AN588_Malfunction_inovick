@@ -50,49 +50,33 @@ z.prop.test <- function(p1, n1, p2 = NULL, n2 = NULL, p0, alpha = 0.05) {
         }
 ```
 
-## So I think I use the basic format of the prop.test function, but I am struggling to figure out how to fit the parameters into this. Would I use a "for" statement, or an "if/then" situation? Also, would I need to create that exemplar population to draw from? Would I include the parameters for the one tail with phat?
-**I'm not following why this population was created, but I think you need to incorporate the variables you defined above into the basic format of the prop.test function you have below to code Z.prop.test() -NN**
+## Using the new z.prop.test function on a one sample t-test:
+# I had originally thought I needed to make an exemplar population with 1's and 0's like in the module, but it seems like I can just make my own dataset instead, so I tried that and it seemed to work
 ```{r}
-#create a population of 500 “1”s and 500 “0”s, i.e., where π = 0.5
-pop <- c(rep(0, 500), rep(1, 500))
-#prop.test function
-prop.test(x, n, p = NULL,
-          alternative = c("two.sided", "less", "greater"),
-          conf.level = 0.95, correct = F)
-#From http://www.sthda.com/english/wiki/two-proportions-z-test-in-r
-#running a one proportion z-test  
-binom.test(x, n, p = 0.5, alternative = "two.sided")
-prop.test(x, n, p = NULL, alternative = "two.sided",
-          correct = F)
+p1 <- c(0.7, 0.75, 0.3, 0.5, 0.9, 0.8, 0.7, 0.77, 0.73, 0.77, 0.72, 0.7, 0.75, 0.71, 0.74, 0.73, 0.66, 0.77, 0.75, 0.71, 0.7, 0.7, 0.78, 0.7, 0.6, 0.7, 0.8, 0.77, 0.76, 0.75, 0.71, 0.81, 0.44, 0.55, 0.7, 0.8, 0.28, 0.6, 0.65, 0.35)
+n1 <- 40
+p0 <- 0.5 
+z.prop.test(p1 = p1, n1 = n1, p0 = p0)
+
+#Getting the mean and standard deviation to use in the two sample t-test:
+mean(p1)
+sd(p1)
 ```
 
-## I think I would need to include these somehow to print the final results once the function is run? I am not sure how to integrate them.
-**I think the definitions of these variables/words would be more clear if they were actual text outside of the r code blocks as opposed to inside the code themselves since I first thought they were notes to yourself or explanation for the code below.-NN**
+## Using the new z.prop.test function on a two sample t-test:
+# I used the same dataset of n=40 from the one sample t-test to do the two sample
 ```{r}
-# printing the p-value
-res$p.value
-# printing the confidence interval
-res$conf.int
-#components of prop.test function:
-#statistic: the number of successes
-#parameter: the number of trials
-#p.value: the p-value of the test
-#conf.int: a confidence interval for the probability of success.
-#estimate: the estimated probability of success.
-#Adjust this for parameters
-Z.prop.test()
-z.test = function(x,mu,popvar){
-one.tail.p <- NULL
-z.score <- round((mean(x)-mu)/(popvar/sqrt(length(x))),3)
-one.tail.p <- round(pnorm(abs(z.score),lower.tail = FALSE),3)
-cat(" z =",z.score,"\n",
-"one-tailed probability =", one.tail.p,"\n",
-"two-tailed probability =", 2*one.tail.p )}
+p1 <- rnorm(40, mean = 0.68, sd = 0.14)
+n1 <- 40
+p0 <- 0.5 
+p2 <- rnorm(40, mean = 0.3, sd = 0.4)
+n2 <- 40
+z.prop.test(p1 = p1, n1 = n1, p0 = p0, p2 = p2, n2 = n2)
 ```
 
 ### Challenge 2
 ## The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size)
-## Install packages, load packages:
+# Install and load packages:
 ```{r}
 #Load necessary packages
 library(curl)
@@ -102,6 +86,7 @@ install.packages("gridExtra")
 library(gridExtra)
 install.packages("lmodel2")
 library(lmodel2)
+library(tidyr)
 ```
 
 #Load data, fitting a regression model to predict longevity
@@ -111,46 +96,47 @@ f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/m
 d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)
 ```
-#Estimating the slope by hand-- this is not working lol
-**I'm not really understanding why you subtracted mean(d$columnname) - I tried removing that bit from the y and x assignments and a plot was created. I think I'm just not familiar with estimating the slope with this equation. -NN**
+##Fit the regression model and, using {ggplot2}, produce a scatterplot with the fitted line superimposed upon the data. Append the the fitted model equation to your plot (HINT: use the function geom_text()
+#I originally did with both lm and another messier way without axes labels and using the code from module 12, determining the slope by hand instead of using lm. I changed to just using the lm function and geom_point.
 ```{r}
-#First plot the data
-plot(data = d, Brain_Size_Species_Mean ~ MaxLongevity_m)
-#Estimate the slope-- Tried this, it just gave me a gray box? Why?
-y <- d$Brain_Size_Species_Mean - mean(d$Brain_Size_Species_Mean)
-x <- d$MaxLongevity_m - mean(d$MaxLongevity_m)
-z <- data.frame(cbind(x, y))
-g <- ggplot(data = z, aes(x = x, y = y)) + geom_point()
-g
-```
-
-#Using lm function
-**I followed a similar process by going off the code in one of the modules too. -NN**
-```{r}
-#I will try the lm function now here
 m <- lm(MaxLongevity_m ~ Brain_Size_Species_Mean, data = d)
 m
 names(m)
 m$coefficients
-```
 
-**I think since we're predicting longevity from brain size that means that longevity is x and brain size is y; so, when x is 0 then y is 248.952g but I'm with you - I'm not sure how that makes sense? -NN**
-```{r}
-#Intercept is 248.952. This means that when the y=0, brain size would be 248.952 g. Right? Did I get this backwards?
-#Now fitting the line to the plot
-g <- ggplot(data = d, aes(x = MaxLongevity_m, y = Brain_Size_Species_Mean))
-g <- g + geom_point()
-g <- g + geom_smooth(method = "lm", formula = y ~ x)
-g
-```
+lblm <- ggplot(data = d, aes(x = Brain_Size_Species_Mean, y = MaxLongevity_m))
+lblm<- lblm + geom_point() 
+lbllm<- lblm + geom_smooth(method = "lm", formula = y ~ x) + xlab("Mean Species Brain Size (g)") + ylab("Max Species Longevity (months)") + theme_classic()
+lblm
 
+
+loglbl<- lm(log(MaxLongevity_m) ~ log(Brain_Size_Species_Mean), data = d)
+loglbl
+
+loglblm <- ggplot(data = d, aes(x = log(Brain_Size_Species_Mean), y = log(MaxLongevity_m)))
+loglblm<- loglblm + geom_point() 
+loglblm<- loglblm + geom_smooth(method = "lm", formula = y ~ x) + xlab("Log Mean Species Brain Size (g)") + ylab("Log Max Species Longevity (months)") + theme_classic()
+loglblm
+```
+##Intercept is 248.952. This means that when the x=0, brain size would be 248.952 g. I need a little more info on how to interpret this
+
+#Identify and interpret the point estimate of the slope (β1), as well as the outcome of the test associated with the hypotheses H0: β1 = 0; HA: β1 ≠ 0. Also, find a 90 percent CI for the slope (β1) parameter.
 ```{r}
-#Made the variables into a dataframe
+summary(lbModel)
+ci <- confint(m, level = 0.90)
+ci
+summary(loglbl)
+ci <- confint(loglbl, level = 0.90)
+ci
+
+#Log transformed data is a better graph because it cuts out extra and fits it nicely
+```
+##I found this code on stack exchange to put a legend displaying the equation on the graph. None of my peer commentary group added a legend on their graph, so I may have misinterpreted the directions, but I will leave the code in because it did indeed create a figure legend and I may want to use it later:
+```{r}
+#Made the variables into a dataframe first
 df <- data.frame(x = d$MaxLongevity_m, y = d$Brain_Size_Species_Mean)
-```
 
-```{r}
-#Found this on stack exchange to try and put a legend displaying the equation on the graph
+
 lm_eqn <- function(df){
     m <- lm(y ~ x, df);
     eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
@@ -161,17 +147,22 @@ lm_eqn <- function(df){
 }
 p1 <- g + geom_text(x = 200, y = 400, label = lm_eqn(df), parse = TRUE)
 p1
-#Adding a legend to differentiate between the lines for the 90 percent confidence and prediction interval bands... I am not sure how to do this, or what the prediction interval bands are. I still need to produce a point estimate and associated 90 percent PI for the longevity of a species whose brain weight is 800 gm
 ```
-##Now using the log transformed data:
+
+##Using your model, add lines for the 90 percent confidence and prediction interval bands on the plot and add a legend to differentiate between the lines.
+#I needed help for this because I didn't completely understand what was being asked. I think I understand a little better, but I hope we can go over this in class together!
 ```{r}
-brain.size <- log(d$Brain_Size_Species_Mean)
-longevity <- log(d$MaxLongevity_m)
-g <- ggplot(data = d, aes(x = brain.size, y = longevity))
-g <- g + geom_point()
-g <- g + geom_smooth(method = "lm", formula = y ~ x)
-g
-#Log transformed data is a better graph because it cuts out extra and fits it nicely
+h_hat <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean))
+df <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hat))
+names(df) <- c("Mean Species Brain Size", "Max Longevity", "yhat")
+head(df)
+ci <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean),interval = "confidence",
+    level = 0.95)
+ci
+df <- cbind(df, ci)
+names(df) <- c("MeanSpeciesBrainSize", "MaxLongevity", "yhat", "CIfit", "CIlwr", "CIupr")
+head(df)
+df
 ```
 ## Figuring out the best slope-- identifying the point estimate of the slope
 ```{r}
