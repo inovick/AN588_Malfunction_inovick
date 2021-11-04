@@ -8,7 +8,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ### Challenge 2
+
 ## The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size)
+
 # Install and load packages:
 ```{r}
 #Load necessary packages
@@ -22,7 +24,7 @@ library(lmodel2)
 library(tidyr)
 ```
 
-#Load data, fitting a regression model to predict longevity
+#Load data
 ```{r}
 #Load the data using curl command
 f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/KamilarAndCooperData.csv")
@@ -53,7 +55,7 @@ loglblm<- loglblm + geom_smooth(method = "lm", formula = y ~ x) + xlab("Log Mean
 loglblm
 ```
 
-##Intercept is 248.952. This means that when the x=0, brain size would be 248.952 g. I need a little more info on how to interpret this
+##Intercept is 248.952. This means that when the x=0, brain size would be 248.952 g. I am still not completely sure if I am interpreting this correctly, because doesn't that mean that when the organism is 0 years old, its brain is 248.952g? So is this the starting brain size?
 
 #Identify and interpret the point estimate of the slope (β1), as well as the outcome of the test associated with the hypotheses H0: β1 = 0; HA: β1 ≠ 0. Also, find a 90 percent CI for the slope (β1) parameter.
 ```{r}
@@ -86,7 +88,6 @@ p1
 ```
 
 ##Using your model, add lines for the 90 percent confidence and prediction interval bands on the plot and add a legend to differentiate between the lines.
-#I needed help for this because I didn't completely understand what was being asked. I think I understand a little better, but I hope we can go over this in class together!
 ```{r}
 h_hat <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean))
 df <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hat))
@@ -99,6 +100,9 @@ df <- cbind(df, ci)
 names(df) <- c("MeanSpeciesBrainSize", "MaxLongevity", "yhat", "CIfit", "CIlwr", "CIupr")
 head(df)
 df
+
+ggplot(data = df)
+#Gives me a grey square, I don't understand why
 ```
 ## Figuring out the best slope-- identifying the point estimate of the slope
 ```{r}
@@ -120,20 +124,42 @@ manipulate(slope.test(beta1), beta1 = slider(-1, 1, initial = 0, step = 0.005))
 ci <- confint(m, level = 0.90) # using the results of lm()
 ci
 ```
+
+#Produce a point estimate and associated 90 percent PI for the longevity of a species whose brain weight is 800 gm. Do you trust the model to predict observations accurately for this value of the explanatory variable? Why or why not?
+```{r}
+m <- lm(data = d, MaxLongevity_m ~ Brain_Size_Species_Mean)
+summary(m)
+
+t <- coef(summary(m))
+t <- data.frame(unlist(t))
+colnames(t) <- c("Est", "SE", "t", "p")
+t
+
+t$calct <- (t$Est - 0)/t$SE
+t$calcp <- 2 * pt(t$calct, df = 998, lower.tail = FALSE)  # x2 because is 2-tailed test
+t
+
+ci <- confint(m, level = 0.90)  # using the results of lm()
+ci
 ```
 
-## Peer Commentary - NN
-+ What you learned from running their Original Homework Code that helped improve your own code.
-My biggest takeaway from your code is the value in consulting external resources like StackExchange since you were able to figure out how to do things (e.g. adding legends) that I didn't even know how to approach. I also appreciate the "stream of consciousness" that's throughout your code since it makes it clear to the viewer why you chose to do certain things. 
+```{r}
+beta0 <- t$Est[1]
+beta1 <- t$Est[2]
+h_hat <- beta1 * 800 + beta0
+h_hat
+```
+#1223.345 months. I don't fully trust this estimate because the confidence interval is 90% which leaves 10% up to potential chance, so this may not be completely accurate. Additionally, and this could be due to me doing this incorrectly, the predicted age in years is 101.9 years. While this is all hypothetical, if 800g is a common brain size, it can be assumed that not all primates with an 800g brain are 100 years old.
 
-+ What you did in your own code that might help to improve theirs.
-Our codes are pretty similar but I'd say the only difference is our methods of commenting. I personally find it easier to follow if the comments are separate from the code so when the file is knitted they aren't intermingled with the code - however, if this isn't your preference I think your code looks good! 
+#I'm going to try again with a different equation and see if my results are the same:
+```{r}
+pi <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = 800), interval = "prediction", level = 0.90)
+pi
 
-+ What challenges, if any, you both faced in your code that could not be helped by comparison.
-I think we're both confused with the second half of challenge 2 and that can only be helped by consulting the modules and other online resources. 
-
-+ Whether the annotation/commenting on your peer’s Original Homework Code is readable and interpretable to you, and if not then how it could be improved.
-For the most part I was able to follow the annotations and comments in your code, I like how you included code that wasn't necessarily successful too since that shows the breadth of your attempts and the different methods that you considered for answering the various questions. 
-
-Overall, good job! This has been the hardest assignment for me and I think your code looks great. 
-
+```
+#It is the same, so I am probably doing it correctly. I hope. So this may not be a totally trusted way of predicting. I will try again and adjust the confidence interval to see if anything significantly changes:
+```{r}
+pi <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = 800), interval = "prediction", level = 0.99)
+pi
+```
+#Not a lot of difference. So maybe the predictions can be trusted and we are just theoretically predicting something far in the future that may not ever be realistic.
