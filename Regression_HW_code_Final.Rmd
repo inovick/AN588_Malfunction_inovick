@@ -1,0 +1,139 @@
+---
+title: "Regression_HW_code_final"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Challenge 2
+## The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size)
+# Install and load packages:
+```{r}
+#Load necessary packages
+library(curl)
+library(ggplot2)
+library(manipulate)
+install.packages("gridExtra")
+library(gridExtra)
+install.packages("lmodel2")
+library(lmodel2)
+library(tidyr)
+```
+
+#Load data, fitting a regression model to predict longevity
+```{r}
+#Load the data using curl command
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/KamilarAndCooperData.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+
+##Fit the regression model and, using {ggplot2}, produce a scatterplot with the fitted line superimposed upon the data. Append the the fitted model equation to your plot (HINT: use the function geom_text()
+#I originally did with both lm and another messier way without axes labels and using the code from module 12, determining the slope by hand instead of using lm. I changed to just using the lm function and geom_point.
+```{r}
+m <- lm(MaxLongevity_m ~ Brain_Size_Species_Mean, data = d)
+m
+names(m)
+m$coefficients
+
+lblm <- ggplot(data = d, aes(x = Brain_Size_Species_Mean, y = MaxLongevity_m))
+lblm<- lblm + geom_point() 
+lbllm<- lblm + geom_smooth(method = "lm", formula = y ~ x) + xlab("Mean Species Brain Size (g)") + ylab("Max Species Longevity (months)") + theme_classic()
+lblm
+
+
+loglbl<- lm(log(MaxLongevity_m) ~ log(Brain_Size_Species_Mean), data = d)
+loglbl
+
+loglblm <- ggplot(data = d, aes(x = log(Brain_Size_Species_Mean), y = log(MaxLongevity_m)))
+loglblm<- loglblm + geom_point() 
+loglblm<- loglblm + geom_smooth(method = "lm", formula = y ~ x) + xlab("Log Mean Species Brain Size (g)") + ylab("Log Max Species Longevity (months)") + theme_classic()
+loglblm
+```
+
+##Intercept is 248.952. This means that when the x=0, brain size would be 248.952 g. I need a little more info on how to interpret this
+
+#Identify and interpret the point estimate of the slope (β1), as well as the outcome of the test associated with the hypotheses H0: β1 = 0; HA: β1 ≠ 0. Also, find a 90 percent CI for the slope (β1) parameter.
+```{r}
+summary(lbModel)
+ci <- confint(m, level = 0.90)
+ci
+summary(loglbl)
+ci <- confint(loglbl, level = 0.90)
+ci
+
+#Log transformed data is a better graph because it cuts out extra and fits it nicely
+```
+
+##I found this code on stack exchange to put a legend displaying the equation on the graph. None of my peer commentary group added a legend on their graph, so I may have misinterpreted the directions, but I will leave the code in because it did indeed create a figure legend and I may want to use it later:
+```{r}
+#Made the variables into a dataframe first
+df <- data.frame(x = d$MaxLongevity_m, y = d$Brain_Size_Species_Mean)
+
+
+lm_eqn <- function(df){
+    m <- lm(y ~ x, df);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+p1 <- g + geom_text(x = 200, y = 400, label = lm_eqn(df), parse = TRUE)
+p1
+```
+
+##Using your model, add lines for the 90 percent confidence and prediction interval bands on the plot and add a legend to differentiate between the lines.
+#I needed help for this because I didn't completely understand what was being asked. I think I understand a little better, but I hope we can go over this in class together!
+```{r}
+h_hat <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean))
+df <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hat))
+names(df) <- c("Mean Species Brain Size", "Max Longevity", "yhat")
+head(df)
+ci <- predict(m, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean),interval = "confidence",
+    level = 0.95)
+ci
+df <- cbind(df, ci)
+names(df) <- c("MeanSpeciesBrainSize", "MaxLongevity", "yhat", "CIfit", "CIlwr", "CIupr")
+head(df)
+df
+```
+## Figuring out the best slope-- identifying the point estimate of the slope
+```{r}
+slope.test <- function(beta1) {
+    g <- ggplot(data = d, aes(x = d$Brain_Size_Species_Mean, y = MaxLongevity_m))
+    g <- g + geom_point()
+    g <- g + geom_abline(intercept = 0, slope = beta1, size = 1, colour = "blue",
+        alpha = 1/2)
+    ols <- sum((y - beta1 * x)^2)
+    g <- g + ggtitle(paste("Slope = ", beta1, "\nSum of Squared Deviations = ",
+        round(ols, 3)))
+    g
+}
+#Using manipulate. It just gives me a gray square again. Why??
+manipulate(slope.test(beta1), beta1 = slider(-1, 1, initial = 0, step = 0.005))
+```
+#Confidence interval
+```{r}
+ci <- confint(m, level = 0.90) # using the results of lm()
+ci
+```
+```
+
+## Peer Commentary - NN
++ What you learned from running their Original Homework Code that helped improve your own code.
+My biggest takeaway from your code is the value in consulting external resources like StackExchange since you were able to figure out how to do things (e.g. adding legends) that I didn't even know how to approach. I also appreciate the "stream of consciousness" that's throughout your code since it makes it clear to the viewer why you chose to do certain things. 
+
++ What you did in your own code that might help to improve theirs.
+Our codes are pretty similar but I'd say the only difference is our methods of commenting. I personally find it easier to follow if the comments are separate from the code so when the file is knitted they aren't intermingled with the code - however, if this isn't your preference I think your code looks good! 
+
++ What challenges, if any, you both faced in your code that could not be helped by comparison.
+I think we're both confused with the second half of challenge 2 and that can only be helped by consulting the modules and other online resources. 
+
++ Whether the annotation/commenting on your peer’s Original Homework Code is readable and interpretable to you, and if not then how it could be improved.
+For the most part I was able to follow the annotations and comments in your code, I like how you included code that wasn't necessarily successful too since that shows the breadth of your attempts and the different methods that you considered for answering the various questions. 
+
+Overall, good job! This has been the hardest assignment for me and I think your code looks great. 
+
